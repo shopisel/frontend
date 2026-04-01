@@ -7,12 +7,25 @@
    - `VITE_KEYCLOAK_URL`
    - `VITE_KEYCLOAK_REALM`
    - `VITE_KEYCLOAK_CLIENT_ID`
+   - `VITE_API_BASE_URL` (opcional, default: `/api`)
+   - `DEV_API_PROXY_TARGET` (em dev local, URL da gateway, ex: `https://deploy-xma1.onrender.com`)
+   - `DEV_API_PROXY_STRIP_API_PREFIX` (`false` para gateway Render, `true` para backend local)
 3. No cliente do Keycloak, garante:
    - `Standard Flow` ativo
    - PKCE `S256`
    - `Valid Redirect URIs`: `http://localhost:5173/*`
    - `Web Origins`: `http://localhost:5173`
 4. Corre `npm run dev`.
+
+### Modos de debug local
+
+- Frontend local + API no Render gateway:
+  - `DEV_API_PROXY_TARGET=https://<gateway-url>.onrender.com`
+  - `DEV_API_PROXY_STRIP_API_PREFIX=false`
+
+- Frontend local + API local (`list-service`):
+  - `DEV_API_PROXY_TARGET=http://localhost:5051`
+  - `DEV_API_PROXY_STRIP_API_PREFIX=true`
 
 O login e feito por redirect para o Keycloak. O token fica em memoria no frontend e e renovado automaticamente.
 
