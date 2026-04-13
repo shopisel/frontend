@@ -6,6 +6,7 @@ import { OnboardingScreen } from "./components/screens/OnboardingScreen";
 import { AuthScreen } from "./components/screens/AuthScreen";
 import { HomeScreen } from "./components/screens/HomeScreen";
 import { ListsScreen } from "./components/screens/ListsScreen";
+import { ListScreen } from "./components/screens/ListScreen";
 import { ScanScreen } from "./components/screens/ScanScreen";
 import { PricesScreen } from "./components/screens/PricesScreen";
 import { AlertsScreen } from "./components/screens/AlertsScreen";
@@ -59,6 +60,14 @@ function AppLayout({ onLogout, user }: { onLogout: () => void; user?: { name?: s
               element={
                 <motion.div key="lists" className="h-full" {...pageVariants} transition={{ duration: 0.2 }}>
                   <ListsScreen onNavigate={handleNavigate} />
+                </motion.div>
+              }
+            />
+            <Route
+              path="/lists/:listId"
+              element={
+                <motion.div key="list-detail" className="h-full" {...pageVariants} transition={{ duration: 0.2 }}>
+                  <ListScreen onNavigate={handleNavigate} />
                 </motion.div>
               }
             />
