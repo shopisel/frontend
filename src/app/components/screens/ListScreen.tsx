@@ -11,21 +11,32 @@ interface EnrichedItem extends ListItemResponse {
   name: string;
   emoji: string;
   storeName: string;
+  imageSrc?: string;
 }
+
+const getProductImageSrc = (product: Product) => {
+  const imageValue = product.image?.trim();
+  if (!imageValue) return undefined;
+  if (/^(https?:|data:|blob:|\/)/i.test(imageValue)) return imageValue;
+  return undefined;
+};
 
 export function ListScreen({ onNavigate }: { onNavigate?: (tab: string) => void }) {
   const { listId } = useParams<{ listId: string }>();
   const navigate = useNavigate();
 
-  const { getList, updateList } = useLists();
+  const { getList, updateList, removeList } = useLists();
   const { getProductsByIds } = useProducts();
   const { getStores } = useStores();
 
   const [listDetails, setListDetails] = useState<ListResponse | null>(null);
   const [items, setItems] = useState<EnrichedItem[]>([]);
+  const [editingName, setEditingName] = useState(false);
+  const [newName, setNewName] = useState("");
   
   const [searchInput, setSearchInput] = useState("");
   const [showAddModal, setShowAddModal] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState(false);
   
   const [isLoading, setIsLoading] = useState(false);
 
@@ -56,12 +67,17 @@ export function ListScreen({ onNavigate }: { onNavigate?: (tab: string) => void 
          } catch(e) { console.error("Failed to load stores", e); }
       }
 
-      const enriched = rawItems.map(item => ({
+      const enriched = rawItems.map(item => {
+      const product = productsMap[item.productId];
+
+      return {
         ...item,
-        name: productsMap[item.productId]?.name || "Unknown Product",
-        emoji: (productsMap[item.productId] as any)?.emoji || "📦",
+        name: product?.name || "Unknown Product",
+        emoji: (product as any)?.emoji || "📦",
+        imageSrc: product ? getProductImageSrc(product) : undefined,
         storeName: storesMap[item.storeId]?.name || "Unknown Store"
-      }));
+      };
+    })
       
       setItems(enriched);
     } catch (error) {
@@ -77,6 +93,37 @@ export function ListScreen({ onNavigate }: { onNavigate?: (tab: string) => void 
     }
   }, [listId, loadItems]);
 
+  const handleEditName = async () => {
+    if (!listId || !newName.trim()) return;
+    
+    setIsLoading(true);
+    try {
+      await updateList(listId, newName.trim(),  []);
+      setListDetails(prev => prev ? { ...prev, name: newName.trim() } : null);
+      setEditingName(false);
+      setNewName("");
+    } catch(e) {
+      console.error(e);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDeleteList = async () => {
+    if (!listId) return;
+    
+    setIsLoading(true);
+    try {
+      await removeList(listId);
+      setDeleteConfirm(false);
+      navigate("/lists");
+    } catch(e) {
+      console.error(e);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const commitUpdates = async (id: string, updatedItems: EnrichedItem[]) => {
     try {
       const mappedRequest: ListItemRequest[] = updatedItems.map(i => ({
@@ -89,7 +136,6 @@ export function ListScreen({ onNavigate }: { onNavigate?: (tab: string) => void 
       await updateList(id, undefined, mappedRequest);
     } catch(e) {
       console.error(e);
-      // rollback could be applied here
     }
   };
 
@@ -100,6 +146,8 @@ export function ListScreen({ onNavigate }: { onNavigate?: (tab: string) => void 
     commitUpdates(listId, newItems);
   };
 
+  
+  // ...existing code...
   const handleDeleteItem = (id: number) => {
     if (!listId) return;
     const newItems = items.filter(i => i.id !== id);
@@ -107,24 +155,76 @@ export function ListScreen({ onNavigate }: { onNavigate?: (tab: string) => void 
     commitUpdates(listId, newItems);
   };
 
-  const handleAddItem = (addedItem: any) => {
+  // ...existing code...
+const handleAddItem = async (addedItem: any) => {
     if (!listId) return;
+
+    let name = addedItem.name || "Unknown Product";
+    let emoji = addedItem.emoji || "📦";
+    let storeName = addedItem.storeName || "Unknown Store";
+
+    const rawImage = typeof addedItem?.image === "string" ? addedItem.image.trim() : "";
+    let imageSrc = /^(https?:|data:|blob:|\/)/i.test(rawImage) ? rawImage : undefined;
+
+    if ((!imageSrc || !addedItem.name || !addedItem.emoji) && addedItem.productId) {
+      try {
+        const products = await getProductsByIds([addedItem.productId]);
+        const product = products?.[0];
+        if (product) {
+          name = product.name || name;
+          emoji = (product as any)?.emoji || emoji;
+          imageSrc = getProductImageSrc(product) || imageSrc;
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    if (!addedItem.storeName && addedItem.storeId) {
+      try {
+        const stores = await getStores({ ids: addedItem.storeId });
+        if (stores?.[0]?.name) storeName = stores[0].name;
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
     const newItem: EnrichedItem = {
-      id: Date.now(), // Optimistic ID
+      id: Date.now(),
       productId: addedItem.productId,
       storeId: addedItem.storeId,
       quantity: addedItem.quantity,
       price: addedItem.price,
       checked: addedItem.checked,
-      name: addedItem.name,
-      emoji: addedItem.emoji,
-      storeName: addedItem.storeName
+      name,
+      emoji,
+      imageSrc,
+      storeName,
     };
-    
-    const newItems = [...items, newItem];
+
+    setItems((prev) => {
+      const next = [...prev, newItem];
+      void commitUpdates(listId, next);
+      return next;
+    });
+  };
+// ...existing code...
+  
+
+  const handleChangeQuantity = (id: number, delta: number) => {
+    if (!listId) return;
+
+    const newItems = items.map((i) => {
+      if (i.id !== id) return i;
+      const nextQty = Math.max(1, i.quantity + delta); // mínimo 1
+      return { ...i, quantity: nextQty };
+    });
+
     setItems(newItems);
     commitUpdates(listId, newItems);
   };
+
+
 
   const filteredItems = useMemo(() => {
     if (!searchInput.trim()) return items;
@@ -145,8 +245,35 @@ export function ListScreen({ onNavigate }: { onNavigate?: (tab: string) => void 
             <ChevronRight className="w-4 h-4 text-gray-500 rotate-180" />
           </button>
           <div className="flex-1 min-w-0">
-            <h1 className="text-gray-900 truncate" style={{ fontSize: 20, fontWeight: 700 }}>{listDetails?.name || "Lista"}</h1>
+            {editingName ? (
+              <input
+                autoFocus
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+                onBlur={handleEditName}
+                onKeyPress={(e) => e.key === "Enter" && handleEditName()}
+                style={{ fontSize: 20, fontWeight: 700 }}
+                className="w-full bg-transparent outline-none text-gray-900 border-b-2 border-indigo-600"
+              />
+            ) : (
+              <button
+                onClick={() => {
+                  setEditingName(true);
+                  setNewName(listDetails?.name || "");
+                }}
+                className="text-gray-900 truncate hover:text-indigo-600 transition-colors"
+                style={{ fontSize: 20, fontWeight: 700 }}
+              >
+                {listDetails?.name || "Lista"}
+              </button>
+            )}
           </div>
+          <button
+            onClick={() => setDeleteConfirm(true)}
+            className="w-8 h-8 rounded-full bg-red-50 flex items-center justify-center hover:bg-red-100 transition-colors"
+          >
+            <Trash2 className="w-4 h-4 text-red-500" />
+          </button>
           <button onClick={() => { if(listId) loadItems(listId); }} className="w-8 h-8 rounded-full bg-indigo-50 flex items-center justify-center">
             <RefreshCw className={`w-4 h-4 text-indigo-600 ${isLoading ? 'animate-spin' : ''}`} />
           </button>
@@ -200,8 +327,17 @@ export function ListScreen({ onNavigate }: { onNavigate?: (tab: string) => void 
                 style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}
               >
                 <div className="flex items-center gap-3 px-4 py-3.5 relative">
-                  <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center text-xl flex-shrink-0">
-                    {item.emoji || "📦"}
+                  <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                    {item.imageSrc ? (
+                      <img
+                        src={item.imageSrc}
+                        alt={item.name}
+                        className="w-full h-full object-cover"
+                        loading="lazy"
+                      />
+                    ) : (
+                      <span className="text-xl">{item.emoji || "📦"}</span>
+                    )}
                   </div>
 
                   <div className="flex-1 min-w-0">
@@ -216,12 +352,36 @@ export function ListScreen({ onNavigate }: { onNavigate?: (tab: string) => void 
                       {item.name}
                     </p>
                     <div className="flex items-center gap-2">
-                      <span className="text-gray-400" style={{ fontSize: 12 }}>
-                        {item.quantity} un
-                      </span>
-                      <span className="w-1 h-1 rounded-full bg-gray-300" />
-                      <span className="text-gray-400 truncate" style={{ fontSize: 12 }}>{item.storeName}</span>
-                    </div>
+                  <div className="flex items-center gap-1 bg-gray-50 rounded-lg px-1 py-0.5">
+                    <button
+                      onClick={() => handleChangeQuantity(item.id, -1)}
+                      className="w-5 h-5 rounded-md flex items-center justify-center text-gray-600 hover:bg-gray-200 disabled:opacity-40"
+                      disabled={item.quantity <= 1}
+                      aria-label="Diminuir quantidade"
+                      type="button"
+                    >
+                      -
+                    </button>
+
+                    <span className="text-gray-500 min-w-[22px] text-center" style={{ fontSize: 12 }}>
+                      {item.quantity}
+                    </span>
+
+                    <button
+                      onClick={() => handleChangeQuantity(item.id, 1)}
+                      className="w-5 h-5 rounded-md flex items-center justify-center text-gray-600 hover:bg-gray-200"
+                      aria-label="Aumentar quantidade"
+                      type="button"
+                    >
+                      +
+                    </button>
+                  </div>
+
+                  <span className="w-1 h-1 rounded-full bg-gray-300" />
+                  <span className="text-gray-400 truncate" style={{ fontSize: 12 }}>
+                    {item.storeName}
+                  </span>
+                </div>
                   </div>
 
                   <div className="flex items-center gap-3">
@@ -278,6 +438,45 @@ export function ListScreen({ onNavigate }: { onNavigate?: (tab: string) => void 
           <Plus className="w-6 h-6 text-white" />
         </motion.button>
       </div>
+
+      {deleteConfirm && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 flex items-center justify-center z-50 pointer-events-none"
+          onClick={() => setDeleteConfirm(false)}
+        >
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            className="bg-white rounded-3xl p-6 w-80 flex flex-col gap-4 pointer-events-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div>
+              <p className="text-gray-900" style={{ fontSize: 16, fontWeight: 700 }}>Apagar lista?</p>
+              <p className="text-gray-400 mt-2" style={{ fontSize: 13 }}>Esta ação não pode ser desfeita.</p>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setDeleteConfirm(false)}
+                className="flex-1 py-2.5 rounded-xl bg-gray-100 text-gray-700"
+                style={{ fontSize: 14, fontWeight: 600 }}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleDeleteList}
+                className="flex-1 py-2.5 rounded-xl bg-red-500 text-white"
+                style={{ fontSize: 14, fontWeight: 600 }}
+              >
+                Apagar
+              </button>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
 
       <AddProductModal
         isOpen={showAddModal}

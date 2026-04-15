@@ -1,15 +1,16 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion } from "motion/react";
-import { Plus, ChevronRight, ShoppingCart, RefreshCw } from "lucide-react";
+import { Plus, ChevronRight, ShoppingCart, RefreshCw, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useLists, ListResponse } from "../../../api/useLists";
 
 export function ListsScreen({ onNavigate }: { onNavigate?: (tab: string) => void }) {
-  const { getLists, createList } = useLists();
+  const { getLists, createList, removeList } = useLists();
   const navigate = useNavigate();
 
   const [lists, setLists] = useState<ListResponse[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
   const loadLists = useCallback(async () => {
     setIsLoading(true);
@@ -43,6 +44,22 @@ export function ListsScreen({ onNavigate }: { onNavigate?: (tab: string) => void
     }
   };
 
+  const handleDeleteList = async (listId: string) => {
+    setIsLoading(true);
+    try {
+      await removeList(listId);
+      setLists(prev => prev.filter(list => list.id !== listId));
+      setDeleteConfirm(null);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  
+
+  // ...existing code...
   return (
     <div className="flex flex-col h-full bg-[#F8F9FC]">
       <div className="px-5 pt-6 pb-4 bg-white flex justify-between items-center">
@@ -84,7 +101,18 @@ export function ListsScreen({ onNavigate }: { onNavigate?: (tab: string) => void
                         <p className="text-gray-400" style={{ fontSize: 12 }}>{list.items?.length || 0} items</p>
                       </div>
                     </div>
-                    <ChevronRight className="w-5 h-5 text-gray-300 mt-1" />
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setDeleteConfirm(list.id);
+                        }}
+                        className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-red-50 transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4 text-red-500" />
+                      </button>
+                      <ChevronRight className="w-5 h-5 text-gray-300 mt-1" />
+                    </div>
                   </div>
                 </motion.div>
                );
@@ -107,6 +135,47 @@ export function ListsScreen({ onNavigate }: { onNavigate?: (tab: string) => void
           <span className="text-gray-400" style={{ fontSize: 14, fontWeight: 600 }}>Create New List</span>
         </motion.button>
       </div>
+
+      // ...existing code...
+      // ...existing code...
+      {deleteConfirm && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 flex items-center justify-center z-50 pointer-events-none"
+          onClick={() => setDeleteConfirm(null)}
+        >
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            className="bg-white rounded-3xl p-6 w-80 flex flex-col gap-4 pointer-events-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div>
+              <p className="text-gray-900" style={{ fontSize: 16, fontWeight: 700 }}>Apagar lista?</p>
+              <p className="text-gray-400 mt-2" style={{ fontSize: 13 }}>Esta ação não pode ser desfeita.</p>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setDeleteConfirm(null)}
+                className="flex-1 py-2.5 rounded-xl bg-gray-100 text-gray-700"
+                style={{ fontSize: 14, fontWeight: 600 }}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => handleDeleteList(deleteConfirm)}
+                className="flex-1 py-2.5 rounded-xl bg-red-500 text-white"
+                style={{ fontSize: 14, fontWeight: 600 }}
+              >
+                Apagar
+              </button>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
     </div>
   );
 }

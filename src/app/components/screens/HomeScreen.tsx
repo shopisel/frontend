@@ -24,9 +24,14 @@ const alerts = [
 
 interface HomeScreenProps {
   onNavigate: (tab: string) => void;
+  user?: {
+    name?: string;
+    email?: string;
+    username?: string;
+  } | null;
 }
 
-export function HomeScreen({ onNavigate }: HomeScreenProps) {
+export function HomeScreen({ onNavigate, user }: HomeScreenProps) {
   const [quickAdd, setQuickAdd] = useState("");
   const [checkedItems, setCheckedItems] = useState<Set<number>>(new Set([2]));
 
@@ -46,7 +51,7 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
           <div>
             <p className="text-gray-400" style={{ fontSize: 13 }}>Good morning 👋</p>
             <h1 className="text-gray-900" style={{ fontSize: 22, fontWeight: 700 }}>
-              Alex Johnson
+              {user?.name ? `Welcome back, ${user.name}!` : "Welcome to ShopSmart!"}
             </h1>
           </div>
           <div className="flex items-center gap-3">
@@ -58,7 +63,14 @@ export function HomeScreen({ onNavigate }: HomeScreenProps) {
               <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500" />
             </button>
             <div className="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center">
-              <span className="text-white" style={{ fontSize: 14, fontWeight: 700 }}>AJ</span>
+              <button
+              className="relative w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center"
+              onClick={() => onNavigate("profile")}
+            >
+              <span className="text-white" style={{ fontSize: 14, fontWeight: 700 }}>
+                {user?.name?.trim()?.charAt(0).toUpperCase() || "U"}
+              </span>
+            </button>
             </div>
           </div>
         </div>

@@ -7,7 +7,6 @@ import { AuthScreen } from "./components/screens/AuthScreen";
 import { HomeScreen } from "./components/screens/HomeScreen";
 import { ListsScreen } from "./components/screens/ListsScreen";
 import { ListScreen } from "./components/screens/ListScreen";
-import { ScanScreen } from "./components/screens/ScanScreen";
 import { PricesScreen } from "./components/screens/PricesScreen";
 import { AlertsScreen } from "./components/screens/AlertsScreen";
 import { ProfileScreen } from "./components/screens/ProfileScreen";
@@ -30,7 +29,6 @@ function AppLayout({ onLogout, user }: { onLogout: () => void; user?: { name?: s
       const routeMap: Record<string, string> = {
         home: "/",
         lists: "/lists",
-        scan: "/scan",
         prices: "/prices",
         alerts: "/alerts",
         profile: "/profile",
@@ -51,7 +49,7 @@ function AppLayout({ onLogout, user }: { onLogout: () => void; user?: { name?: s
               path="/"
               element={
                 <motion.div key="home" className="h-full" {...pageVariants} transition={{ duration: 0.2 }}>
-                  <HomeScreen onNavigate={handleNavigate} />
+                  <HomeScreen onNavigate={handleNavigate} user ={user} />
                 </motion.div>
               }
             />
@@ -68,14 +66,6 @@ function AppLayout({ onLogout, user }: { onLogout: () => void; user?: { name?: s
               element={
                 <motion.div key="list-detail" className="h-full" {...pageVariants} transition={{ duration: 0.2 }}>
                   <ListScreen onNavigate={handleNavigate} />
-                </motion.div>
-              }
-            />
-            <Route
-              path="/scan"
-              element={
-                <motion.div key="scan" className="h-full" {...pageVariants} transition={{ duration: 0.2 }}>
-                  <ScanScreen onNavigate={handleNavigate} />
                 </motion.div>
               }
             />

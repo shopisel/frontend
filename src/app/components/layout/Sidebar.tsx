@@ -7,7 +7,6 @@ import {
 const navItems = [
   { to: "/",        label: "Home",    icon: Home,      exact: true  },
   { to: "/lists",   label: "Listas",  icon: List,      exact: false },
-  { to: "/scan",    label: "Scan",    icon: ScanLine,  exact: false },
   { to: "/prices",  label: "Preços",  icon: BarChart2, exact: false },
   { to: "/alerts",  label: "Alertas", icon: Bell,      exact: false },
   { to: "/profile", label: "Perfil",  icon: User,      exact: false },
