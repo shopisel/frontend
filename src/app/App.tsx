@@ -3,7 +3,6 @@ import { AnimatePresence, motion } from "motion/react";
 import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import { SplashScreen } from "./components/screens/SplashScreen";
 import { OnboardingScreen } from "./components/screens/OnboardingScreen";
-import { AuthScreen } from "./components/screens/AuthScreen";
 import { HomeScreen } from "./components/screens/HomeScreen";
 import { ListsScreen } from "./components/screens/ListsScreen";
 import { ListScreen } from "./components/screens/ListScreen";
@@ -125,13 +124,19 @@ export default function App() {
     setFlow("onboarding");
   }, [isAuthenticated]);
 
-  const handleOnboardingComplete = useCallback(() => {
+  const handleOnboardingComplete = useCallback(async () => {
     if (isAuthenticated) {
       setFlow("app");
       return;
     }
-    setFlow("auth");
-  }, [isAuthenticated]);
+
+    setAuthLoading(true);
+    try {
+      await login(); 
+    } finally {
+      setAuthLoading(false);
+    }
+  }, [isAuthenticated, login]);
 
   const handleKeycloakLogin = useCallback(async () => {
     setAuthLoading(true);
@@ -187,25 +192,7 @@ export default function App() {
             <OnboardingScreen onComplete={handleOnboardingComplete} />
           </motion.div>
         )}
-
-        {flow === "auth" && (
-          <motion.div
-            key="auth"
-            className="fixed inset-0"
-            initial={{ opacity: 0, x: 40 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -40 }}
-            transition={{ duration: 0.35, ease: [0.25, 0.1, 0.25, 1] }}
-          >
-            <AuthScreen
-              onLogin={() => { void handleKeycloakLogin(); }}
-              onRegister={() => { void handleKeycloakRegister(); }}
-              loading={authLoading}
-              configError={configError}
-            />
-          </motion.div>
-        )}
-
+        
         {flow === "app" && (
           <motion.div
             key="app"

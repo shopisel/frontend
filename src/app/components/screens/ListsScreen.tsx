@@ -63,7 +63,7 @@ export function ListsScreen({ onNavigate }: { onNavigate?: (tab: string) => void
   return (
     <div className="flex flex-col h-full bg-[#F8F9FC]">
       <div className="bg-white">
-        <div className="max-w-6xl mx-auto w-full px-5 lg:px-8 pt-6 pb-4 flex justify-between items-center">
+        <div className="max-w-6xl w-full px-5 lg:px-8 pt-6 pb-4">
           <div>
             <h1 className="text-gray-900 mb-1" style={{ fontSize: 24, fontWeight: 700 }}>
               Minhas Listas
@@ -72,14 +72,11 @@ export function ListsScreen({ onNavigate }: { onNavigate?: (tab: string) => void
               Gere as tuas compras
             </p>
           </div>
-          <button onClick={loadLists} className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center">
-            <RefreshCw className={`w-5 h-5 text-gray-500 ${isLoading ? "animate-spin" : ""}`} />
-          </button>
         </div>
       </div>
 
       <div className="flex-1 overflow-y-auto">
-        <div className="max-w-6xl mx-auto w-full px-5 lg:px-8 py-5">
+        <div className="max-w-6xl w-full px-5 lg:px-8 py-5">
           {isLoading && lists.length === 0 ? (
             <div className="bg-white rounded-3xl p-5" style={{ boxShadow: "0 2px 16px rgba(0,0,0,0.06)" }}>
               <p className="text-gray-500" style={{ fontSize: 14 }}>
@@ -141,18 +138,27 @@ export function ListsScreen({ onNavigate }: { onNavigate?: (tab: string) => void
             </div>
           )}
 
-          <motion.button
-            onClick={handleCreateList}
-            whileTap={{ scale: 0.98 }}
-            className="w-full py-4 rounded-3xl border-2 border-dashed border-gray-200 flex items-center justify-center gap-2 bg-white"
-          >
-            <Plus className="w-5 h-5 text-gray-400" />
-            <span className="text-gray-400" style={{ fontSize: 14, fontWeight: 600 }}>
-              Create New List
-            </span>
-          </motion.button>
         </div>
       </div>
+
+      <motion.button
+        onClick={loadLists}
+        whileTap={{ scale: 0.95 }}
+        className="fixed top-4 right-4 z-40 w-11 h-11 rounded-full bg-white shadow-md flex items-center justify-center"
+        aria-label="Atualizar listas"
+      >
+        <RefreshCw className={`w-5 h-5 text-gray-600 ${isLoading ? "animate-spin" : ""}`} />
+      </motion.button>
+
+      <motion.button
+        onClick={handleCreateList}
+        whileTap={{ scale: 0.95 }}
+        className="fixed right-5 bottom-24 md:bottom-6 z-40 w-14 h-14 rounded-full bg-blue-600 shadow-lg flex items-center justify-center"
+        aria-label="Criar nova lista"
+      >
+        <Plus className="w-7 h-7 text-white" />
+      </motion.button>
+
       {deleteConfirm && (
         <motion.div
           initial={{ opacity: 0 }}

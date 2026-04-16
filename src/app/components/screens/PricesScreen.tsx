@@ -479,7 +479,7 @@ export function PricesScreen() {
                     Best price
                   </p>
                   <p className="text-white" style={{ fontSize: 26, fontWeight: 800 }}>
-                    {sortedStores[0] ? `$${sortedStores[0].price.toFixed(2)}` : "—"}
+                    {sortedStores[0] ? `€${sortedStores[0].price.toFixed(2)}` : "—"}
                   </p>
                 </div>
                 <div className="text-right">
@@ -489,7 +489,7 @@ export function PricesScreen() {
                   <div className="flex items-center gap-1 justify-end">
                     <Tag className="w-4 h-4 text-green-300" />
                     <p className="text-green-300" style={{ fontSize: 18, fontWeight: 700 }}>
-                      {sortedStores.length >= 2 ? `$${savings.toFixed(2)} off` : "—"}
+                      {sortedStores.length >= 2 ? `€${savings.toFixed(2)} off` : "—"}
                     </p>
                   </div>
                 </div>
@@ -575,7 +575,7 @@ export function PricesScreen() {
                       style={{ backgroundColor: i === 0 ? "#6366F1" : "white" }}
                     >
                       <span style={{ fontSize: 11, fontWeight: 700, color: i === 0 ? "white" : "#111827" }}>
-                        ${store.price.toFixed(2)}
+                        €{store.price.toFixed(2)}
                       </span>
                     </div>
                     <div className="w-1 h-2 bg-gray-400 mx-auto" />
@@ -650,11 +650,11 @@ export function PricesScreen() {
                   </div>
                   <div className="text-right">
                     <p style={{ fontSize: 20, fontWeight: 800, color: i === 0 ? "#10B981" : "#111827" }}>
-                      ${store.price.toFixed(2)}
+                      €{store.price.toFixed(2)}
                     </p>
                     {i > 0 && sortedStores[0] && (
                       <p className="text-red-400" style={{ fontSize: 11 }}>
-                        +${(store.price - sortedStores[0].price).toFixed(2)} more
+                        +€{(store.price - sortedStores[0].price).toFixed(2)} more
                       </p>
                     )}
                   </div>
