@@ -305,7 +305,7 @@ const handleAddItem = async (addedItem: any) => {
             />
           </div>
           <div className="bg-indigo-50 rounded-xl px-3 py-2.5">
-            <span style={{ fontSize: 13, fontWeight: 700, color: "#6366F1" }}>${total.toFixed(2)}</span>
+            <span style={{ fontSize: 13, fontWeight: 700, color: "#6366F1" }}>€{total.toFixed(2)}</span>
           </div>
           <motion.button
             whileTap={{ scale: 0.98 }}
@@ -399,7 +399,7 @@ const handleAddItem = async (addedItem: any) => {
 
                   <div className="flex items-center gap-3">
                     <span style={{ fontSize: 14, fontWeight: 700, color: item.checked ? "#9CA3AF" : "#10B981" }}>
-                      ${(item.price * item.quantity).toFixed(2)}
+                      €{(item.price * item.quantity).toFixed(2)}
                     </span>
                     <button
                       onClick={() => handleDeleteItem(item.id)}
