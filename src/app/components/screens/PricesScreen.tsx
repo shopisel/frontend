@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { MapPin, Search, ArrowUpDown, Tag, Navigation, Loader } from "lucide-react";
+import { MapPin, Search, ArrowUpDown, Tag, Navigation, Loader, Star } from "lucide-react";
 import { useProducts, type Category, type Product } from "../../../api/useProducts";
 import { usePrices } from "../../../api/usePrices";
 import { useStores } from "../../../api/useStores";
@@ -23,7 +23,12 @@ const getProductImageSrc = (product: Product) => {
   return undefined;
 };
 
-export function PricesScreen() {
+type PricesScreenProps = {
+  favoriteProductIds: string[];
+  onToggleFavorite: (product: Product) => Promise<void>;
+};
+
+export function PricesScreen({ favoriteProductIds, onToggleFavorite }: PricesScreenProps) {
   const { searchProducts, getMainCategories, getSubCategories, getProductsByCategory } = useProducts();
   const { getPrices } = usePrices();
   const { getStores } = useStores();
@@ -45,6 +50,7 @@ export function PricesScreen() {
   const [isLoadingSubCats, setIsLoadingSubCats] = useState(false);
   const [isLoadingProducts, setIsLoadingProducts] = useState(false);
   const [isLoadingStores, setIsLoadingStores] = useState(false);
+  const [favoritePendingId, setFavoritePendingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const resetCategorySelection = () => {
@@ -254,6 +260,17 @@ export function PricesScreen() {
     return sortedStores[sortedStores.length - 1].price - sortedStores[0].price;
   }, [sortedStores]);
 
+  const selectedProductFavorite = selectedProduct ? favoriteProductIds.includes(selectedProduct.id) : false;
+
+  const handleToggleFavorite = async (product: Product) => {
+    setFavoritePendingId(product.id);
+    try {
+      await onToggleFavorite(product);
+    } finally {
+      setFavoritePendingId(null);
+    }
+  };
+
   return (
     <div className="flex flex-col h-full bg-[#F8F9FC]">
       {/* Header */}
@@ -384,6 +401,7 @@ export function PricesScreen() {
                 {products.map((p) => {
                   const imgSrc = getProductImageSrc(p);
                   const isSelected = selectedProduct?.id === p.id;
+                  const isFavorite = favoriteProductIds.includes(p.id);
 
                   return (
                     <motion.button
@@ -425,6 +443,7 @@ export function PricesScreen() {
                         >
                           {p.name}
                         </p>
+                        {isFavorite && <Star className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" fill="#F59E0B" />}
                       </div>
                     </motion.button>
                   );
@@ -471,7 +490,25 @@ export function PricesScreen() {
                   <p className="text-white" style={{ fontSize: 16, fontWeight: 700 }}>
                     {selectedProduct.name}
                   </p>
-              </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => void handleToggleFavorite(selectedProduct)}
+                  disabled={favoritePendingId === selectedProduct.id}
+                  className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center disabled:opacity-50"
+                  aria-label={selectedProductFavorite ? "Remover dos favoritos" : "Adicionar aos favoritos"}
+                  title={selectedProductFavorite ? "Remover dos favoritos" : "Adicionar aos favoritos"}
+                >
+                  {favoritePendingId === selectedProduct.id ? (
+                    <Loader className="w-4 h-4 text-white animate-spin" />
+                  ) : (
+                    <Star
+                      className="w-5 h-5"
+                      style={{ color: selectedProductFavorite ? "#FCD34D" : "#E0E7FF" }}
+                      fill={selectedProductFavorite ? "#FCD34D" : "transparent"}
+                    />
+                  )}
+                </button>
               </div>
               <div className="flex items-center justify-between mt-4">
                 <div>

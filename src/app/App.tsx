@@ -11,6 +11,8 @@ import { AlertsScreen } from "./components/screens/AlertsScreen";
 import { ProfileScreen } from "./components/screens/ProfileScreen";
 import { Sidebar } from "./components/layout/Sidebar";
 import { useAuth } from "../auth/AuthProvider";
+import { useAccounts } from "../api/useAccounts";
+import { useProducts, type Product } from "../api/useProducts";
 
 type AppFlow = "splash" | "onboarding" | "auth" | "app";
 
@@ -20,7 +22,25 @@ const pageVariants = {
   exit: { opacity: 0, y: -8 },
 };
 
-function AppLayout({ onLogout, user }: { onLogout: () => void; user?: { name?: string; email?: string; username?: string } | null }) {
+function AppLayout({
+  onLogout,
+  user,
+  favoriteProductIds,
+  favoriteProducts,
+  favoritesLoading,
+  favoritesError,
+  onToggleFavorite,
+  onReloadFavorites,
+}: {
+  onLogout: () => void;
+  user?: { name?: string; email?: string; username?: string } | null;
+  favoriteProductIds: string[];
+  favoriteProducts: Product[];
+  favoritesLoading: boolean;
+  favoritesError: string | null;
+  onToggleFavorite: (product: Product) => Promise<void>;
+  onReloadFavorites: () => Promise<void>;
+}) {
   const navigate = useNavigate();
 
   const handleNavigate = useCallback(
@@ -72,7 +92,10 @@ function AppLayout({ onLogout, user }: { onLogout: () => void; user?: { name?: s
               path="/prices"
               element={
                 <motion.div key="prices" className="h-full" {...pageVariants} transition={{ duration: 0.2 }}>
-                  <PricesScreen />
+                  <PricesScreen
+                    favoriteProductIds={favoriteProductIds}
+                    onToggleFavorite={onToggleFavorite}
+                  />
                 </motion.div>
               }
             />
@@ -88,7 +111,14 @@ function AppLayout({ onLogout, user }: { onLogout: () => void; user?: { name?: s
               path="/profile"
               element={
                 <motion.div key="profile" className="h-full" {...pageVariants} transition={{ duration: 0.2 }}>
-                  <ProfileScreen onLogout={onLogout} user={user} />
+                  <ProfileScreen
+                    onLogout={onLogout}
+                    user={user}
+                    favoriteProducts={favoriteProducts}
+                    favoritesLoading={favoritesLoading}
+                    favoritesError={favoritesError}
+                    onReloadFavorites={onReloadFavorites}
+                  />
                 </motion.div>
               }
             />
@@ -102,8 +132,14 @@ function AppLayout({ onLogout, user }: { onLogout: () => void; user?: { name?: s
 
 export default function App() {
   const { initialized, isAuthenticated, login, register, logout, configError, user } = useAuth();
+  const { syncMyAccount, getMyFavoriteProductIds, addFavoriteProduct, removeFavoriteProduct } = useAccounts();
+  const { getProductsByIds } = useProducts();
   const [flow, setFlow] = useState<AppFlow>("splash");
   const [authLoading, setAuthLoading] = useState(false);
+  const [favoriteProductIds, setFavoriteProductIds] = useState<string[]>([]);
+  const [favoriteProducts, setFavoriteProducts] = useState<Product[]>([]);
+  const [favoritesLoading, setFavoritesLoading] = useState(false);
+  const [favoritesError, setFavoritesError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!initialized) return;
@@ -164,6 +200,92 @@ export default function App() {
     }
   }, [register]);
 
+  const loadFavorites = useCallback(async () => {
+    if (!isAuthenticated) return;
+
+    setFavoritesLoading(true);
+    setFavoritesError(null);
+
+    try {
+      const ids = await getMyFavoriteProductIds();
+      setFavoriteProductIds(ids);
+
+      if (!ids.length) {
+        setFavoriteProducts([]);
+        return;
+      }
+
+      const products = await getProductsByIds(ids);
+      const productById = new Map(products.map((product) => [product.id, product] as const));
+      const orderedProducts = ids.map((id) => productById.get(id)).filter((product): product is Product => Boolean(product));
+      setFavoriteProducts(orderedProducts);
+    } catch (error) {
+      setFavoritesError(error instanceof Error ? error.message : "Falha ao carregar favoritos.");
+    } finally {
+      setFavoritesLoading(false);
+    }
+  }, [isAuthenticated, getMyFavoriteProductIds, getProductsByIds]);
+
+  useEffect(() => {
+    if (!initialized || !isAuthenticated) {
+      setFavoriteProductIds([]);
+      setFavoriteProducts([]);
+      setFavoritesError(null);
+      setFavoritesLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+
+    const initializeAccount = async () => {
+      try {
+        await syncMyAccount();
+      } catch {
+        // Continue loading favorites even if sync fails once.
+      }
+
+      if (cancelled) return;
+      await loadFavorites();
+    };
+
+    void initializeAccount();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [initialized, isAuthenticated, syncMyAccount, loadFavorites]);
+
+  const handleToggleFavorite = useCallback(
+    async (product: Product) => {
+      const alreadyFavorite = favoriteProductIds.includes(product.id);
+      const previousIds = favoriteProductIds;
+      const previousProducts = favoriteProducts;
+
+      setFavoritesError(null);
+
+      if (alreadyFavorite) {
+        setFavoriteProductIds((prev) => prev.filter((id) => id !== product.id));
+        setFavoriteProducts((prev) => prev.filter((item) => item.id !== product.id));
+      } else {
+        setFavoriteProductIds((prev) => [...prev, product.id]);
+        setFavoriteProducts((prev) => (prev.some((item) => item.id === product.id) ? prev : [product, ...prev]));
+      }
+
+      try {
+        if (alreadyFavorite) {
+          await removeFavoriteProduct(product.id);
+        } else {
+          await addFavoriteProduct(product.id);
+        }
+      } catch (error) {
+        setFavoriteProductIds(previousIds);
+        setFavoriteProducts(previousProducts);
+        setFavoritesError(error instanceof Error ? error.message : "Falha ao atualizar favoritos.");
+      }
+    },
+    [favoriteProductIds, favoriteProducts, addFavoriteProduct, removeFavoriteProduct]
+  );
+
   return (
     <div className="min-h-screen">
       <AnimatePresence mode="wait">
@@ -201,7 +323,18 @@ export default function App() {
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.35, ease: [0.25, 0.1, 0.25, 1] }}
           >
-            <AppLayout onLogout={() => { void handleKeycloakLogout(); }} user={user} />
+            <AppLayout
+              onLogout={() => {
+                void handleKeycloakLogout();
+              }}
+              user={user}
+              favoriteProductIds={favoriteProductIds}
+              favoriteProducts={favoriteProducts}
+              favoritesLoading={favoritesLoading}
+              favoritesError={favoritesError}
+              onToggleFavorite={handleToggleFavorite}
+              onReloadFavorites={loadFavorites}
+            />
           </motion.div>
         )}
       </AnimatePresence>
