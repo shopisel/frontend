@@ -6,12 +6,17 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useLists, ListResponse, ListItemResponse, ListItemRequest } from "../../../api/useLists";
 import { useProducts, Product } from "../../../api/useProducts";
 import { useStores, StoreResponse } from "../../../api/useStores";
+import { usePrices, calculateDiscountPercentage } from "../../../api/usePrices";
+
 
 interface EnrichedItem extends ListItemResponse {
   name: string;
   emoji: string;
   storeName: string;
   imageSrc?: string;
+  unitPrice: number;
+  originalUnitPrice?: number;
+  discountPercent?: number;
 }
 
 const getProductImageSrc = (product: Product) => {
@@ -28,6 +33,7 @@ export function ListScreen({ onNavigate }: { onNavigate?: (tab: string) => void 
   const { getList, updateList, removeList } = useLists();
   const { getProductsByIds } = useProducts();
   const { getStores } = useStores();
+  const { getPrices } = usePrices();
 
   const [listDetails, setListDetails] = useState<ListResponse | null>(null);
   const [items, setItems] = useState<EnrichedItem[]>([]);
@@ -67,15 +73,47 @@ export function ListScreen({ onNavigate }: { onNavigate?: (tab: string) => void 
          } catch(e) { console.error("Failed to load stores", e); }
       }
 
+      const priceByProductStore = new Map<string, { unitPrice: number; originalUnitPrice?: number; discountPercent?: number }>();
+      const uniqueKeys = Array.from(new Set(rawItems.map((item) => `${item.productId}::${item.storeId}`)));
+      await Promise.all(
+        uniqueKeys.map(async (key) => {
+          const [productId, storeId] = key.split("::");
+          try {
+            const prices = await getPrices(productId, storeId);
+            const best = prices.reduce((acc, curr) => {
+              const accCurrent = typeof acc.sale === "number" && acc.sale > 0 ? acc.sale : acc.price;
+              const currCurrent = typeof curr.sale === "number" && curr.sale > 0 ? curr.sale : curr.price;
+              return currCurrent < accCurrent ? curr : acc;
+            }, prices[0]);
+
+            if (!best) return;
+
+            const hasSale = typeof best.sale === "number" && best.sale > 0 && best.sale < best.price;
+            const unitPrice = hasSale ? best.sale as number : best.price;
+            const originalUnitPrice = hasSale ? best.price : undefined;
+            const discountPercent = hasSale ? calculateDiscountPercentage(best.price, best.sale as number) : undefined;
+            priceByProductStore.set(key, { unitPrice, originalUnitPrice, discountPercent });
+          } catch {
+            // Keep item visible even if price lookup fails.
+            priceByProductStore.set(key, { unitPrice: 0 });
+          }
+        })
+      );
+
       const enriched = rawItems.map(item => {
       const product = productsMap[item.productId];
+      const key = `${item.productId}::${item.storeId}`;
+      const pricing = priceByProductStore.get(key);
 
       return {
         ...item,
         name: product?.name || "Unknown Product",
         emoji: (product as any)?.emoji || "📦",
         imageSrc: product ? getProductImageSrc(product) : undefined,
-        storeName: storesMap[item.storeId]?.name || "Unknown Store"
+        storeName: storesMap[item.storeId]?.name || "Unknown Store",
+        unitPrice: pricing?.unitPrice ?? 0,
+        originalUnitPrice: pricing?.originalUnitPrice,
+        discountPercent: pricing?.discountPercent,
       };
     })
       
@@ -85,7 +123,7 @@ export function ListScreen({ onNavigate }: { onNavigate?: (tab: string) => void 
     } finally {
       setIsLoading(false);
     }
-  }, [getList, getProductsByIds, getStores]);
+  }, [getList, getPrices, getProductsByIds, getStores]);
 
   useEffect(() => {
     if (listId) {
@@ -130,7 +168,6 @@ export function ListScreen({ onNavigate }: { onNavigate?: (tab: string) => void 
         productId: i.productId,
         storeId: i.storeId,
         quantity: i.quantity,
-        price: i.price,
         checked: i.checked
       }));
       await updateList(id, undefined, mappedRequest);
@@ -194,7 +231,14 @@ const handleAddItem = async (addedItem: any) => {
       productId: addedItem.productId,
       storeId: addedItem.storeId,
       quantity: addedItem.quantity,
-      price: addedItem.price,
+      unitPrice: typeof addedItem.price === "number" ? addedItem.price : 0,
+      originalUnitPrice: typeof addedItem.originalPrice === "number" ? addedItem.originalPrice : undefined,
+      discountPercent:
+        typeof addedItem.originalPrice === "number" &&
+        typeof addedItem.price === "number" &&
+        addedItem.originalPrice > addedItem.price
+          ? calculateDiscountPercentage(addedItem.originalPrice, addedItem.price)
+          : undefined,
       checked: addedItem.checked,
       name,
       emoji,
@@ -203,7 +247,31 @@ const handleAddItem = async (addedItem: any) => {
     };
 
     setItems((prev) => {
-      const next = [...prev, newItem];
+      const existingIndex = prev.findIndex(
+        (item) => item.productId === newItem.productId && item.storeId === newItem.storeId,
+      );
+
+      let next: EnrichedItem[];
+      if (existingIndex >= 0) {
+        const existing = prev[existingIndex];
+        const merged: EnrichedItem = {
+          ...existing,
+          quantity: existing.quantity + Math.max(1, newItem.quantity),
+          unitPrice: newItem.unitPrice,
+          originalUnitPrice: newItem.originalUnitPrice,
+          discountPercent: newItem.discountPercent,
+          checked: false,
+          name,
+          emoji,
+          imageSrc,
+          storeName,
+        };
+        next = [...prev];
+        next[existingIndex] = merged;
+      } else {
+        next = [...prev, newItem];
+      }
+
       void commitUpdates(listId, next);
       return next;
     });
@@ -231,7 +299,7 @@ const handleAddItem = async (addedItem: any) => {
     return items.filter(i => i.name.toLowerCase().includes(searchInput.toLowerCase()));
   }, [items, searchInput]);
 
-  const total = items.filter(i => !i.checked).reduce((s, i) => s + (i.price * i.quantity), 0);
+  const total = items.filter(i => !i.checked).reduce((s, i) => s + (i.unitPrice * i.quantity), 0);
   const checkedCount = items.filter(i => i.checked).length;
 
   return (
@@ -398,9 +466,23 @@ const handleAddItem = async (addedItem: any) => {
                   </div>
 
                   <div className="flex items-center gap-3">
-                    <span style={{ fontSize: 14, fontWeight: 700, color: item.checked ? "#9CA3AF" : "#10B981" }}>
-                      €{(item.price * item.quantity).toFixed(2)}
-                    </span>
+                    <div className="flex flex-col items-end leading-tight">
+                      <span style={{ fontSize: 14, fontWeight: 700, color: item.checked ? "#9CA3AF" : "#10B981" }}>
+                        €{(item.unitPrice * item.quantity).toFixed(2)}
+                      </span>
+                      {typeof item.originalUnitPrice === "number" && item.originalUnitPrice > item.unitPrice && (
+                        <>
+                          <span className="text-gray-400" style={{ fontSize: 11, textDecoration: "line-through" }}>
+                            €{(item.originalUnitPrice * item.quantity).toFixed(2)}
+                          </span>
+                          {typeof item.discountPercent === "number" && (
+                            <span className="text-green-600" style={{ fontSize: 11, fontWeight: 700 }}>
+                              -{item.discountPercent}%
+                            </span>
+                          )}
+                        </>
+                      )}
+                    </div>
                     <button
                       onClick={() => handleDeleteItem(item.id)}
                       className="w-7 h-7 rounded-full bg-red-50 flex items-center justify-center"

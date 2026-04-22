@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { MapPin, Search, ArrowUpDown, Tag, Navigation, Loader, Star } from "lucide-react";
 import { useProducts, type Category, type Product } from "../../../api/useProducts";
-import { usePrices } from "../../../api/usePrices";
+import { usePrices, type PriceResponse } from "../../../api/usePrices";
 import { useStores } from "../../../api/useStores";
 import { ImageWithFallback } from "../fallback/ImageWithFallback";
 
@@ -10,10 +10,19 @@ type StoreRow = {
   id: string;
   name: string;
   price: number;
+  originalPrice: number;
+  sale?: number;
   dist?: string;
   distKm?: number;
   rating?: number;
   promo?: string | null;
+};
+
+const getEffectivePrice = (price: PriceResponse) => {
+  if (typeof price.sale === "number" && price.sale > 0) {
+    return price.sale;
+  }
+  return price.price;
 };
 
 const getProductImageSrc = (product: Product) => {
@@ -226,7 +235,9 @@ export function PricesScreen({ favoriteProductIds, onToggleFavorite }: PricesScr
         const rows: StoreRow[] = (pricesRes || []).map((p) => ({
           id: p.storeId,
           name: storeNameById.get(p.storeId) ?? p.storeId,
-          price: p.price,
+          price: getEffectivePrice(p),
+          originalPrice: p.price,
+          sale: p.sale,
         }));
 
         if (cancelled) return;
@@ -614,6 +625,17 @@ export function PricesScreen({ favoriteProductIds, onToggleFavorite }: PricesScr
                       <span style={{ fontSize: 11, fontWeight: 700, color: i === 0 ? "white" : "#111827" }}>
                         €{store.price.toFixed(2)}
                       </span>
+                      {typeof store.sale === "number" && store.sale > 0 && (
+                        <span
+                          style={{
+                            fontSize: 10,
+                            textDecoration: "line-through",
+                            color: i === 0 ? "#E0E7FF" : "#6B7280",
+                          }}
+                        >
+                          €{store.originalPrice.toFixed(2)}
+                        </span>
+                      )}
                     </div>
                     <div className="w-1 h-2 bg-gray-400 mx-auto" />
                   </div>
@@ -689,6 +711,11 @@ export function PricesScreen({ favoriteProductIds, onToggleFavorite }: PricesScr
                     <p style={{ fontSize: 20, fontWeight: 800, color: i === 0 ? "#10B981" : "#111827" }}>
                       €{store.price.toFixed(2)}
                     </p>
+                    {typeof store.sale === "number" && store.sale > 0 && (
+                      <p className="text-gray-400" style={{ fontSize: 12, textDecoration: "line-through" }}>
+                        €{store.originalPrice.toFixed(2)}
+                      </p>
+                    )}
                     {i > 0 && sortedStores[0] && (
                       <p className="text-red-400" style={{ fontSize: 11 }}>
                         +€{(store.price - sortedStores[0].price).toFixed(2)} more

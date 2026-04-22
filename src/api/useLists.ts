@@ -6,7 +6,6 @@ export interface ListItemResponse {
   productId: string;
   storeId: string;
   quantity: number;
-  price: number;
   checked: boolean;
 }
 
@@ -21,7 +20,6 @@ export interface ListItemRequest {
   productId: string;
   storeId: string;
   quantity: number;
-  price: number;
   checked: boolean;
 }
 

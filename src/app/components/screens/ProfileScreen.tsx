@@ -19,6 +19,7 @@ interface ProfileScreenProps {
   favoritesLoading: boolean;
   favoritesError: string | null;
   onReloadFavorites: () => Promise<void>;
+  initialTab?: "settings" | "favorites";
 }
 
 function Toggle({ value, onChange }: { value: boolean; onChange: (v: boolean) => void }) {
@@ -58,6 +59,7 @@ export function ProfileScreen({
   favoritesLoading,
   favoritesError,
   onReloadFavorites,
+  initialTab = "settings",
 }: ProfileScreenProps) {
   const [darkMode, setDarkMode] = useState(false);
   const [priceAlerts, setPriceAlerts] = useState(true);
@@ -119,7 +121,7 @@ export function ProfileScreen({
       </div>
 
       <div className="px-5 py-4">
-        <Tabs defaultValue="settings" className="w-full">
+        <Tabs defaultValue={initialTab} className="w-full">
           <TabsList className="w-full h-11 bg-gray-100">
             <TabsTrigger value="settings">Settings</TabsTrigger>
             <TabsTrigger value="favorites">Favoritos</TabsTrigger>
@@ -301,9 +303,6 @@ export function ProfileScreen({
                             style={{ fontSize: 13, fontWeight: 700 }}
                           >
                             {product.name}
-                          </p>
-                          <p className="text-gray-400 truncate" style={{ fontSize: 11 }}>
-                            ID: {product.id}
                           </p>
                         </div>
                         <Star className="w-4 h-4 text-amber-500" fill="#F59E0B" />

@@ -122,6 +122,22 @@ function AppLayout({
                 </motion.div>
               }
             />
+            <Route
+              path="/profile/favorites"
+              element={
+                <motion.div key="profile-favorites" className="h-full" {...pageVariants} transition={{ duration: 0.2 }}>
+                  <ProfileScreen
+                    onLogout={onLogout}
+                    user={user}
+                    favoriteProducts={favoriteProducts}
+                    favoritesLoading={favoritesLoading}
+                    favoritesError={favoritesError}
+                    onReloadFavorites={onReloadFavorites}
+                    initialTab="favorites"
+                  />
+                </motion.div>
+              }
+            />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </AnimatePresence>

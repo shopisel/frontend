@@ -237,13 +237,17 @@ export function AddProductModal({ isOpen, onClose, onAddItem }: AddProductModalP
     if (!selectedProduct) return;
     
     const knownPrice = productPrices.find(p => p.storeId === store.id);
-    const price = knownPrice ? knownPrice.price : 0;
+    const hasSale = typeof knownPrice?.sale === "number" && knownPrice.sale > 0;
+    const price = knownPrice
+      ? (typeof knownPrice.sale === "number" && knownPrice.sale > 0 ? knownPrice.sale : knownPrice.price)
+      : 0;
 
     onAddItem({
       productId: selectedProduct.id,
       storeId: store.id,
       quantity: 1,
       price: price,
+      originalPrice: hasSale ? knownPrice?.price : undefined,
       checked: false,
       name: selectedProduct.name,
       emoji: selectedProduct.emoji || "📦",
@@ -352,6 +356,8 @@ export function AddProductModal({ isOpen, onClose, onAddItem }: AddProductModalP
                     <div className="flex justify-center py-8"><Loader className="w-8 h-8 animate-spin text-indigo-500" /></div>
                   ) : allStores.map(store => {
                     const priceMatch = productPrices.find(p => p.storeId === store.id);
+                    const hasSale = typeof priceMatch?.sale === "number" && priceMatch.sale > 0;
+                    const displayPrice = hasSale ? (priceMatch?.sale ?? 0) : (priceMatch?.price ?? 0);
                     return (
                       <motion.button
                         key={store.id}
@@ -367,8 +373,13 @@ export function AddProductModal({ isOpen, onClose, onAddItem }: AddProductModalP
                         </div>
                         <div className="text-right">
                           <span className="block font-bold text-gray-900">
-                            {priceMatch ? `${priceMatch.price.toFixed(2)} €` : "Indefinido"}
+                            {priceMatch ? `${displayPrice.toFixed(2)} €` : "Indefinido"}
                           </span>
+                          {hasSale && priceMatch && (
+                            <span className="block text-gray-400" style={{ fontSize: 12, textDecoration: "line-through" }}>
+                              {priceMatch.price.toFixed(2)} €
+                            </span>
+                          )}
                         </div>
                       </motion.button>
                     )
