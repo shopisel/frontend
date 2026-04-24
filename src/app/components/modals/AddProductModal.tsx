@@ -328,6 +328,9 @@ export function AddProductModal({ isOpen, onClose, onAddItem }: AddProductModalP
                         src={getProductImageSrc(selectedProduct)}
                         alt={selectedProduct.name}
                         className="w-16 h-16 object-cover rounded-2xl"
+                        loading="lazy"
+                        decoding="async"
+                        fetchPriority="low"
                       />
                     ) : (
                       selectedProduct.emoji || "📦"
@@ -452,6 +455,9 @@ export function AddProductModal({ isOpen, onClose, onAddItem }: AddProductModalP
                                   src={getProductImageSrc(product)}
                                   alt={product.name}
                                   className="w-10 h-10 object-cover rounded-lg"
+                                  loading="lazy"
+                                  decoding="async"
+                                  fetchPriority="low"
                                 />
                               ) : (
                                 product.emoji || "📦"
@@ -495,6 +501,9 @@ export function AddProductModal({ isOpen, onClose, onAddItem }: AddProductModalP
                                   src={imageSrc}
                                   alt={cat.name}
                                   className="w-12 h-12 object-cover rounded-lg bg-white shadow-sm"
+                                  loading="lazy"
+                                  decoding="async"
+                                  fetchPriority="low"
                                 />
                               ) : (
                                 <div className="w-12 h-12 rounded-lg bg-white flex items-center justify-center shadow-sm">📦</div>
@@ -527,6 +536,9 @@ export function AddProductModal({ isOpen, onClose, onAddItem }: AddProductModalP
                                   src={imageSrc}
                                   alt={subCat.name}
                                   className="w-12 h-12 object-cover rounded-lg bg-white shadow-sm"
+                                  loading="lazy"
+                                  decoding="async"
+                                  fetchPriority="low"
                                 />
                               ) : (
                                 <div className="w-12 h-12 rounded-lg bg-white flex items-center justify-center shadow-sm">📦</div>
@@ -560,6 +572,9 @@ export function AddProductModal({ isOpen, onClose, onAddItem }: AddProductModalP
                                 src={getProductImageSrc(product)}
                                 alt={product.name}
                                 className="w-10 h-10 object-cover rounded-lg"
+                                loading="lazy"
+                                decoding="async"
+                                fetchPriority="low"
                               />
                             ) : (
                               product.emoji || "📦"

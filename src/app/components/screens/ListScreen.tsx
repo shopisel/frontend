@@ -298,6 +298,7 @@ const handleAddItem = async (addedItem: any) => {
     if (!searchInput.trim()) return items;
     return items.filter(i => i.name.toLowerCase().includes(searchInput.toLowerCase()));
   }, [items, searchInput]);
+  const shouldAnimateRows = filteredItems.length <= 24;
 
   const total = items.filter(i => !i.checked).reduce((s, i) => s + (i.unitPrice * i.quantity), 0);
   const checkedCount = items.filter(i => i.checked).length;
@@ -400,12 +401,16 @@ const handleAddItem = async (addedItem: any) => {
             {filteredItems.map((item) => (
               <motion.div
                 key={item.id}
-                layout
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, height: 0, marginBottom: 0 }}
+                layout={shouldAnimateRows}
+                initial={shouldAnimateRows ? { opacity: 0, x: -20 } : false}
+                animate={shouldAnimateRows ? { opacity: 1, x: 0 } : undefined}
+                exit={shouldAnimateRows ? { opacity: 0, height: 0, marginBottom: 0 } : undefined}
                 className="bg-white rounded-2xl mb-2.5 overflow-hidden"
-                style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}
+                style={{
+                  boxShadow: shouldAnimateRows ? "0 2px 8px rgba(0,0,0,0.05)" : "0 1px 4px rgba(0,0,0,0.04)",
+                  contentVisibility: "auto",
+                  containIntrinsicSize: "84px",
+                }}
               >
                 <div className="flex items-center gap-3 px-4 py-3.5 relative">
                   <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center flex-shrink-0 overflow-hidden">
@@ -415,6 +420,8 @@ const handleAddItem = async (addedItem: any) => {
                         alt={item.name}
                         className="w-full h-full object-cover"
                         loading="lazy"
+                        decoding="async"
+                        fetchPriority="low"
                       />
                     ) : (
                       <span className="text-xl">{item.emoji || "📦"}</span>
@@ -489,27 +496,40 @@ const handleAddItem = async (addedItem: any) => {
                     >
                       <Trash2 className="w-3.5 h-3.5 text-red-400" />
                     </button>
-                    <motion.button
-                      onClick={() => handleToggleItem(item.id)}
-                      className="w-6 h-6 rounded-full border-2 flex items-center justify-center"
-                      animate={{
-                        borderColor: item.checked ? "#10B981" : "#D1D5DB",
-                        backgroundColor: item.checked ? "#10B981" : "white",
-                      }}
-                      transition={{ duration: 0.2 }}
-                    >
-                      <AnimatePresence>
-                        {item.checked && (
-                          <motion.div
-                            initial={{ scale: 0 }}
-                            animate={{ scale: 1 }}
-                            exit={{ scale: 0 }}
-                          >
-                            <Check className="w-3 h-3 text-white" />
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </motion.button>
+                    {shouldAnimateRows ? (
+                      <motion.button
+                        onClick={() => handleToggleItem(item.id)}
+                        className="w-6 h-6 rounded-full border-2 flex items-center justify-center"
+                        animate={{
+                          borderColor: item.checked ? "#10B981" : "#D1D5DB",
+                          backgroundColor: item.checked ? "#10B981" : "white",
+                        }}
+                        transition={{ duration: 0.2 }}
+                      >
+                        <AnimatePresence>
+                          {item.checked && (
+                            <motion.div
+                              initial={{ scale: 0 }}
+                              animate={{ scale: 1 }}
+                              exit={{ scale: 0 }}
+                            >
+                              <Check className="w-3 h-3 text-white" />
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </motion.button>
+                    ) : (
+                      <button
+                        onClick={() => handleToggleItem(item.id)}
+                        className="w-6 h-6 rounded-full border-2 flex items-center justify-center"
+                        style={{
+                          borderColor: item.checked ? "#10B981" : "#D1D5DB",
+                          backgroundColor: item.checked ? "#10B981" : "white",
+                        }}
+                      >
+                        {item.checked && <Check className="w-3 h-3 text-white" />}
+                      </button>
+                    )}
                   </div>
                 </div>
               </motion.div>
