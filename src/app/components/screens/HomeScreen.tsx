@@ -82,6 +82,7 @@ export function HomeScreen({ onNavigate, user, favoriteProductIds = [] }: HomeSc
   const [quickAdd, setQuickAdd] = useState("");
   
   const [latestList, setLatestList] = useState<ListResponse | null>(null);
+  const [totalListItems, setTotalListItems] = useState(0);
   const [myListItems, setMyListItems] = useState<HomeListItem[]>([]);
   const [favoriteDeals, setFavoriteDeals] = useState<FavoriteDeal[]>([]);
   const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
@@ -102,6 +103,12 @@ export function HomeScreen({ onNavigate, user, favoriteProductIds = [] }: HomeSc
     try {
       const lists = await getLists();
       if (lists && lists.length > 0) {
+        const totalItems = lists.reduce(
+          (sum, list) => sum + list.items.reduce((listSum, item) => listSum + item.quantity, 0),
+          0
+        );
+        setTotalListItems(totalItems);
+
         const sortedLists = [...lists].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
         const latest = sortedLists[0];
         setLatestList(latest);
@@ -182,11 +189,13 @@ export function HomeScreen({ onNavigate, user, favoriteProductIds = [] }: HomeSc
         }
       } else {
         setLatestList(null);
+        setTotalListItems(0);
         setMyListItems([]);
       }
     } catch (error) {
       console.error(error);
       setLatestList(null);
+      setTotalListItems(0);
       setMyListItems([]);
     } finally {
       setIsLoadingLatestList(false);
@@ -385,6 +394,12 @@ export function HomeScreen({ onNavigate, user, favoriteProductIds = [] }: HomeSc
     }
   };
 
+  const summaryStats = [
+    { label: "Items", value: String(totalListItems), icon: ShoppingBag, color: "#6366F1", bg: "#EEF2FF" },
+    { label: "Saved", value: "€0", icon: TrendingDown, color: "#10B981", bg: "#ECFDF5" },
+    { label: "Alerts", value: "0", icon: Zap, color: "#F59E0B", bg: "#FFFBEB" },
+  ];
+
   return (
     <div className="flex flex-col h-full bg-[#F8F9FC] overflow-hidden">
       {/* Header */}
@@ -402,7 +417,6 @@ export function HomeScreen({ onNavigate, user, favoriteProductIds = [] }: HomeSc
               onClick={() => onNavigate("alerts")}
             >
               <Bell className="w-5 h-5 text-indigo-600" />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500" />
             </button>
             <div className="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center">
               <button
@@ -450,11 +464,7 @@ export function HomeScreen({ onNavigate, user, favoriteProductIds = [] }: HomeSc
 
         {/* Summary stats */}
         <div className="px-5 py-4 flex gap-3">
-          {[
-            { label: "Items", value: "12", icon: ShoppingBag, color: "#6366F1", bg: "#EEF2FF" },
-            { label: "Saved", value: "$4.80", icon: TrendingDown, color: "#10B981", bg: "#ECFDF5" },
-            { label: "Alerts", value: "3", icon: Zap, color: "#F59E0B", bg: "#FFFBEB" },
-          ].map((stat) => {
+          {summaryStats.map((stat) => {
             const Icon = stat.icon;
             return (
               <div
@@ -742,31 +752,12 @@ export function HomeScreen({ onNavigate, user, favoriteProductIds = [] }: HomeSc
             </button>
           </div>
           <div className="flex flex-col gap-2.5">
-            {alerts.map((alert) => (
-              <motion.div
-                key={alert.id}
-                className="bg-white rounded-2xl px-4 py-3.5 flex items-center gap-3"
-                style={{ boxShadow: "0 2px 12px rgba(0,0,0,0.05)" }}
-                whileTap={{ scale: 0.98 }}
-              >
-                <div className="w-8 h-8 rounded-xl bg-green-50 flex items-center justify-center flex-shrink-0">
-                  <TrendingDown className="w-4 h-4 text-green-500" />
-                </div>
-                <div className="flex-1">
-                  <p className="text-gray-900" style={{ fontSize: 13, fontWeight: 600 }}>{alert.name}</p>
-                  <p className="text-gray-400" style={{ fontSize: 12 }}>{alert.store}</p>
-                </div>
-                <div className="text-right">
-                  <div className="flex items-center gap-1">
-                    <span style={{ fontSize: 11, fontWeight: 700, color: "#10B981" }}>{alert.drop}</span>
-                  </div>
-                  <div className="flex items-baseline gap-1">
-                    <span style={{ fontSize: 13, fontWeight: 700, color: "#111827" }}>{alert.to}</span>
-                    <span className="line-through text-gray-400" style={{ fontSize: 11 }}>{alert.from}</span>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
+            <div
+              className="bg-white rounded-2xl px-4 py-6 text-center text-gray-500"
+              style={{ boxShadow: "0 2px 12px rgba(0,0,0,0.05)", fontSize: 14 }}
+            >
+              No active alerts.
+            </div>
           </div>
         </div>
       </div>
