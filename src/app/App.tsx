@@ -59,7 +59,7 @@ function AppLayout({
 
   return (
     <div className="flex h-screen bg-[#F8F9FC] overflow-hidden">
-      <Sidebar onLogout={onLogout} alertCount={5} />
+      <Sidebar onLogout={onLogout} alertCount={0} />
 
       <main className="flex-1 overflow-hidden">
         <AnimatePresence mode="wait">
