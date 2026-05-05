@@ -1,0 +1,36 @@
+app = "shopisel-frontend-fly"
+primary_region = "fra"
+
+[build]
+  dockerfile = "Dockerfile"
+
+  [build.args]
+    VITE_API_BASE_URL = "/api"
+    VITE_KEYCLOAK_CLIENT_ID = "shopisel-web"
+    VITE_KEYCLOAK_REALM = "shopisel"
+    VITE_KEYCLOAK_URL = "https://keycloack-iyww.onrender.com"
+
+[http_service]
+  internal_port = 80
+  force_https = true
+  auto_start_machines = true
+  auto_stop_machines = "off"
+  min_machines_running = 1
+  processes = ["app"]
+
+  [http_service.concurrency]
+    type = "connections"
+    soft_limit = 200
+    hard_limit = 250
+
+  [[http_service.http_checks]]
+    grace_period = "10s"
+    interval = "15s"
+    method = "GET"
+    timeout = "2s"
+    path = "/health"
+
+[[vm]]
+  cpu_kind = "shared"
+  cpus = 1
+  memory = "256mb"
