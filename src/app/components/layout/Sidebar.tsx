@@ -1,7 +1,7 @@
 import { NavLink, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
 import {
-  Home, List, BarChart2, User, ShoppingCart, LogOut,
+  Home, List, BarChart2, User, LogOut,
 } from "lucide-react";
 
 const navItems = [
@@ -30,10 +30,13 @@ export function Sidebar({ onLogout }: SidebarProps) {
         onClick={() => navigate("/")}
       >
         <div
-          className="w-9 h-9 rounded-xl flex items-center justify-center shadow-lg flex-shrink-0"
-          style={{ background: "linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%)" }}
+          className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center shadow-lg flex-shrink-0 overflow-hidden"
         >
-          <ShoppingCart className="w-4 h-4 text-white" strokeWidth={2} />
+          <img
+            src="/shopisel.png"
+            alt="Shopisel logo"
+            className="w-full h-full object-cover"
+          />
         </div>
         <div>
           <p className="font-bold leading-tight" style={{ fontSize: 15, letterSpacing: "-0.3px" }}>
