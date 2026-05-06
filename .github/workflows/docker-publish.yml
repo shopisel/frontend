@@ -18,8 +18,17 @@ jobs:
 
       - name: Set up Flyctl
         uses: superfly/flyctl-actions/setup-flyctl@master
+        with:
+          version: 0.3.181
 
-      - name: Deploy to Fly.io
+      - name: Deploy to Fly.io with fallback
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
-        run: flyctl deploy --remote-only --depot=false
+        run: |
+          set -e
+          if flyctl deploy; then
+            echo "Primary deploy succeeded."
+          else
+            echo "Primary deploy failed. Retrying with local-only build..."
+            flyctl deploy --local-only
+          fi
