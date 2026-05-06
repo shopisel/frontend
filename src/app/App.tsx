@@ -7,7 +7,6 @@ import { HomeScreen } from "./components/screens/HomeScreen";
 import { ListsScreen } from "./components/screens/ListsScreen";
 import { ListScreen } from "./components/screens/ListScreen";
 import { PricesScreen } from "./components/screens/PricesScreen";
-import { AlertsScreen } from "./components/screens/AlertsScreen";
 import { ProfileScreen } from "./components/screens/ProfileScreen";
 import { Sidebar } from "./components/layout/Sidebar";
 import { useAuth } from "../auth/AuthProvider";
@@ -49,7 +48,6 @@ function AppLayout({
         home: "/",
         lists: "/lists",
         prices: "/prices",
-        alerts: "/alerts",
         profile: "/profile",
       };
       navigate(routeMap[tab] ?? "/");
@@ -59,7 +57,7 @@ function AppLayout({
 
   return (
     <div className="flex h-screen bg-[#F8F9FC] overflow-hidden">
-      <Sidebar onLogout={onLogout} alertCount={0} />
+      <Sidebar onLogout={onLogout} />
 
       <main className="flex-1 overflow-hidden">
         <AnimatePresence mode="wait">
@@ -100,14 +98,6 @@ function AppLayout({
                     favoriteProductIds={favoriteProductIds}
                     onToggleFavorite={onToggleFavorite}
                   />
-                </motion.div>
-              }
-            />
-            <Route
-              path="/alerts"
-              element={
-                <motion.div key="alerts" className="h-full" {...pageVariants} transition={{ duration: 0.2 }}>
-                  <AlertsScreen />
                 </motion.div>
               }
             />

@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion } from "motion/react";
 import {
-  Search, Bell, Plus, ChevronRight, TrendingDown, MapPin, Loader2,
-  ShoppingBag, Zap
+  Search, Plus, ChevronRight, TrendingDown, MapPin, Loader2,
+  ShoppingBag
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useLists, ListResponse } from "../../../api/useLists";
@@ -397,7 +397,6 @@ export function HomeScreen({ onNavigate, user, favoriteProductIds = [] }: HomeSc
   const summaryStats = [
     { label: "Items", value: String(totalListItems), icon: ShoppingBag, color: "#6366F1", bg: "#EEF2FF" },
     { label: "Saved", value: "€0", icon: TrendingDown, color: "#10B981", bg: "#ECFDF5" },
-    { label: "Alerts", value: "0", icon: Zap, color: "#F59E0B", bg: "#FFFBEB" },
   ];
 
   return (
@@ -412,12 +411,6 @@ export function HomeScreen({ onNavigate, user, favoriteProductIds = [] }: HomeSc
             </h1>
           </div>
           <div className="flex items-center gap-3">
-            <button
-              className="relative w-10 h-10 rounded-full bg-indigo-50 flex items-center justify-center"
-              onClick={() => onNavigate("alerts")}
-            >
-              <Bell className="w-5 h-5 text-indigo-600" />
-            </button>
             <div className="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center">
               <button
               className="relative w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center"
@@ -739,27 +732,6 @@ export function HomeScreen({ onNavigate, user, favoriteProductIds = [] }: HomeSc
           </div>
         </div>
 
-        {/* Active alerts */}
-        <div className="px-5 pb-6">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-gray-900" style={{ fontSize: 16, fontWeight: 700 }}>Active Alerts</h3>
-            <button
-              onClick={() => onNavigate("alerts")}
-              className="flex items-center gap-1"
-              style={{ fontSize: 13, color: "#6366F1", fontWeight: 600 }}
-            >
-              See all <ChevronRight className="w-4 h-4" />
-            </button>
-          </div>
-          <div className="flex flex-col gap-2.5">
-            <div
-              className="bg-white rounded-2xl px-4 py-6 text-center text-gray-500"
-              style={{ boxShadow: "0 2px 12px rgba(0,0,0,0.05)", fontSize: 14 }}
-            >
-              No active alerts.
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   );

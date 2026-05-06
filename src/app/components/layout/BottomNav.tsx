@@ -1,7 +1,7 @@
 import { motion } from "motion/react";
-import { Home, List, ScanLine, BarChart2, User, Bell } from "lucide-react";
+import { Home, List, ScanLine, BarChart2, User } from "lucide-react";
 
-export type AppTab = "home" | "lists" | "scan" | "prices" | "alerts" | "profile";
+export type AppTab = "home" | "lists" | "scan" | "prices" | "profile";
 
 const tabs: { id: AppTab; label: string; icon: typeof Home }[] = [
   { id: "home", label: "Home", icon: Home },
@@ -14,10 +14,9 @@ const tabs: { id: AppTab; label: string; icon: typeof Home }[] = [
 interface BottomNavProps {
   activeTab: AppTab;
   onTabChange: (tab: AppTab) => void;
-  alertCount?: number;
 }
 
-export function BottomNav({ activeTab, onTabChange, alertCount = 0 }: BottomNavProps) {
+export function BottomNav({ activeTab, onTabChange }: BottomNavProps) {
   return (
     <div
       className="flex items-stretch bg-white border-t border-gray-100 px-2 py-2 pb-3"
@@ -61,11 +60,6 @@ export function BottomNav({ activeTab, onTabChange, alertCount = 0 }: BottomNavP
                     style={{ color: isActive ? "#6366F1" : "#9CA3AF" }}
                     strokeWidth={isActive ? 2.2 : 1.8}
                   />
-                  {tab.id === "alerts" && alertCount > 0 && (
-                    <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-500 flex items-center justify-center">
-                      <span className="text-white" style={{ fontSize: 9, fontWeight: 700 }}>{alertCount}</span>
-                    </div>
-                  )}
                 </div>
                 <span
                   style={{
