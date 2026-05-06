@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { motion } from "motion/react";
 import {
-  ChevronRight, Bell, MapPin, Moon, Shield, CreditCard,
+  ChevronRight, MapPin, Moon, Shield, CreditCard,
   LogOut, Star, Store, User, Loader, RotateCcw
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
@@ -64,8 +64,6 @@ export function ProfileScreen({
   initialTab = "settings",
 }: ProfileScreenProps) {
   const [darkMode, setDarkMode] = useState(false);
-  const [priceAlerts, setPriceAlerts] = useState(true);
-  const [dealNotifs, setDealNotifs] = useState(true);
   const [locationTracking, setLocationTracking] = useState(true);
   const [biometric, setBiometric] = useState(false);
   const [stores, setStores] = useState(preferredStores);
@@ -154,28 +152,6 @@ export function ProfileScreen({
                         </div>
                       </div>
                       <Toggle value={store.active} onChange={() => toggleStore(i)} />
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Notifications */}
-              <div className="bg-white rounded-3xl p-4" style={{ boxShadow: "0 2px 12px rgba(0,0,0,0.05)" }}>
-                <div className="flex items-center gap-2 mb-3">
-                  <Bell className="w-4 h-4 text-indigo-600" />
-                  <p className="text-gray-900" style={{ fontSize: 15, fontWeight: 700 }}>Notifications</p>
-                </div>
-                <div className="flex flex-col gap-4">
-                  {[
-                    { label: "Price Alerts", sub: "Notified when prices drop", value: priceAlerts, onChange: setPriceAlerts },
-                    { label: "Deal Notifications", sub: "Weekly deals from stores", value: dealNotifs, onChange: setDealNotifs },
-                  ].map((item) => (
-                    <div key={item.label} className="flex items-center justify-between">
-                      <div>
-                        <p className="text-gray-900" style={{ fontSize: 13, fontWeight: 600 }}>{item.label}</p>
-                        <p className="text-gray-400" style={{ fontSize: 12 }}>{item.sub}</p>
-                      </div>
-                      <Toggle value={item.value} onChange={item.onChange} />
                     </div>
                   ))}
                 </div>

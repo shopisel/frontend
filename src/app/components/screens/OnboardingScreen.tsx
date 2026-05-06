@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { MapPin, List, Bell, ChevronRight } from "lucide-react";
+import { MapPin, List, ChevronRight } from "lucide-react";
 
 const slides = [
   {
@@ -18,14 +18,6 @@ const slides = [
     title: "Smart Shopping Lists",
     subtitle: "Create intelligent lists that organize items by store aisle and track your spending.",
     image: "https://images.unsplash.com/photo-1552825896-8059df63a1fb?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1920",
-  },
-  {
-    icon: Bell,
-    color: "#F59E0B",
-    bg: "#FFFBEB",
-    title: "Real-Time Price Alerts",
-    subtitle: "Get notified instantly when prices drop on your favorite products and deals.",
-    image: "https://images.unsplash.com/photo-1730817403595-d78d929eb856?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1920",
   },
 ];
 

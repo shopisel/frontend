@@ -1,23 +1,21 @@
 import { NavLink, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
 import {
-  Home, List, ScanLine, BarChart2, Bell, User, ShoppingCart, LogOut,
+  Home, List, BarChart2, User, ShoppingCart, LogOut,
 } from "lucide-react";
 
 const navItems = [
   { to: "/",        label: "Home",    icon: Home,      exact: true  },
   { to: "/lists",   label: "Listas",  icon: List,      exact: false },
   { to: "/prices",  label: "Preços",  icon: BarChart2, exact: false },
-  { to: "/alerts",  label: "Alertas", icon: Bell,      exact: false },
   { to: "/profile", label: "Perfil",  icon: User,      exact: false },
 ];
 
 interface SidebarProps {
   onLogout: () => void;
-  alertCount?: number;
 }
 
-export function Sidebar({ onLogout, alertCount = 0 }: SidebarProps) {
+export function Sidebar({ onLogout }: SidebarProps) {
   const navigate = useNavigate();
 
   return (
@@ -119,12 +117,6 @@ export function Sidebar({ onLogout, alertCount = 0 }: SidebarProps) {
                     {label}
                   </span>
 
-                  {/* Alert badge */}
-                  {label === "Alertas" && alertCount > 0 && (
-                    <div className="ml-auto w-5 h-5 rounded-full bg-red-500 flex items-center justify-center">
-                      <span style={{ fontSize: 10, fontWeight: 700 }}>{alertCount}</span>
-                    </div>
-                  )}
                 </div>
               </>
             )}
