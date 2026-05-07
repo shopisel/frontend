@@ -20,6 +20,10 @@ function readKeycloakConfig(): KeycloakConfig | null {
 
 const config = readKeycloakConfig();
 
+if (config) {
+  console.info("Shopisel Keycloak host:", config.url);
+}
+
 export const isKeycloakConfigured = config !== null;
 
 export const keycloak = config ? new Keycloak(config) : null;
