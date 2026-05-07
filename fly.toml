@@ -8,7 +8,7 @@ primary_region = "fra"
     VITE_API_BASE_URL = "/api"
     VITE_KEYCLOAK_CLIENT_ID = "shopisel-web"
     VITE_KEYCLOAK_REALM = "shopisel"
-    VITE_KEYCLOAK_URL = "https://keycloack-iyww.onrender.com"
+    VITE_KEYCLOAK_URL = "https://shopisel-keycloak-fly.fly.dev"
 
 [http_service]
   internal_port = 80
