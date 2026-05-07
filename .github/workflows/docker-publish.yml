@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [ "main" ]
 
+concurrency:
+  group: frontend-main-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
@@ -16,12 +20,23 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Build frontend Docker image for validation
+        if: github.event_name == 'pull_request'
+        run: |
+          docker build \
+            --build-arg VITE_KEYCLOAK_URL="${{ vars.VITE_KEYCLOAK_URL }}" \
+            --build-arg VITE_KEYCLOAK_REALM="${{ vars.VITE_KEYCLOAK_REALM }}" \
+            --build-arg VITE_KEYCLOAK_CLIENT_ID="${{ vars.VITE_KEYCLOAK_CLIENT_ID }}" \
+            -t shopisel-frontend-ci .
+
       - name: Set up Flyctl
+        if: github.event_name == 'push'
         uses: superfly/flyctl-actions/setup-flyctl@master
         with:
           version: 0.3.181
 
       - name: Deploy to Fly.io with fallback
+        if: github.event_name == 'push'
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
         run: |
