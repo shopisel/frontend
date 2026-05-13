@@ -12,10 +12,14 @@ concurrency:
 
 permissions:
   contents: read
+  packages: write
 
 jobs:
   build-deploy:
     runs-on: ubuntu-latest
+
+    env:
+      IMAGE_NAME: ghcr.io/shopisel/frontend
 
     steps:
       - uses: actions/checkout@v4
@@ -24,10 +28,35 @@ jobs:
         if: github.event_name == 'pull_request'
         run: |
           docker build \
+            --build-arg VITE_API_BASE_URL="${{ vars.VITE_API_BASE_URL }}" \
             --build-arg VITE_KEYCLOAK_URL="${{ vars.VITE_KEYCLOAK_URL }}" \
             --build-arg VITE_KEYCLOAK_REALM="${{ vars.VITE_KEYCLOAK_REALM }}" \
             --build-arg VITE_KEYCLOAK_CLIENT_ID="${{ vars.VITE_KEYCLOAK_CLIENT_ID }}" \
             -t shopisel-frontend-ci .
+
+      - name: Log in to GitHub Container Registry
+        if: github.event_name == 'push'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        if: github.event_name == 'push'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile
+          push: true
+          build-args: |
+            VITE_API_BASE_URL=${{ vars.VITE_API_BASE_URL }}
+            VITE_KEYCLOAK_URL=${{ vars.VITE_KEYCLOAK_URL }}
+            VITE_KEYCLOAK_REALM=${{ vars.VITE_KEYCLOAK_REALM }}
+            VITE_KEYCLOAK_CLIENT_ID=${{ vars.VITE_KEYCLOAK_CLIENT_ID }}
+          tags: |
+            ${{ env.IMAGE_NAME }}:${{ github.sha }}
+            ${{ env.IMAGE_NAME }}:latest
 
       - name: Set up Flyctl
         if: github.event_name == 'push'
@@ -35,15 +64,8 @@ jobs:
         with:
           version: 0.3.181
 
-      - name: Deploy to Fly.io with fallback
+      - name: Deploy to Fly.io
         if: github.event_name == 'push'
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
-        run: |
-          set -e
-          if flyctl deploy; then
-            echo "Primary deploy succeeded."
-          else
-            echo "Primary deploy failed. Retrying with local-only build..."
-            flyctl deploy --local-only
-          fi
+        run: flyctl deploy --image ${{ env.IMAGE_NAME }}:${{ github.sha }}
